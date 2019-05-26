@@ -6,6 +6,7 @@ import * as NodeCache from 'node-cache'
 import * as sharp from 'sharp'
 import {catchError, concatMap, finalize, map, retryWhen, switchMap, tap, timeout} from "rxjs/operators";
 import * as exif from 'exif'
+import * as cors from 'cors';
 
 require('console-stamp')(console);
 
@@ -52,6 +53,10 @@ class CacheRecord {
     }
 
 }
+
+app.use(cors({
+    exposedHeaders: ['X-Image-Date', 'X-Image-Name']
+}));
 
 app.get("/random", (req, res) => {
 
@@ -117,7 +122,6 @@ app.get("/random", (req, res) => {
             }
 
             headers = addImageNameHeader(result.file as string, headers);
-
             res.writeHead(200, headers);
             res.end(result.buffer);
         },
@@ -180,12 +184,6 @@ function addImageNameHeader(file: string, headers: any) {
     }
     return headers;
 }
-
-app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, X-Image-Name, X-Image-Date");
-    next();
-});
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`)
