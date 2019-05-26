@@ -12,6 +12,7 @@ require('console-stamp')(console);
 const PORT = process.env.PORT || 3000;
 const ROOT_FOLDER = process.env.ROOT_FOLDER || '\\\\DISKSERVER\\Photo';
 const TARGET_FOLDER = process.env.TARGET_FOLDER || ROOT_FOLDER + '\\2019 Cestovanie - Macao';
+const RESIZE_WIDTH = parseInt(process.env.RESIZE_WIDTH) || 500;
 const ALLOWED_RETRIES = 5;
 const RESPONSE_TIMEOUT = 5000;
 
@@ -134,9 +135,7 @@ app.get("/random", (req, res) => {
 function getResizedImageAsBuffer(file: string) {
     return new Observable(o$ => {
         o$.next(sharp(file)
-            .resize(500, 700, {
-                fit: 'inside'
-            })
+            .resize(RESIZE_WIDTH)
             .rotate()
             .toBuffer());
         o$.complete();
@@ -181,6 +180,12 @@ function addImageNameHeader(file: string, headers: any) {
     }
     return headers;
 }
+
+app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, X-Image-Name, X-Image-Date");
+    next();
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`)
