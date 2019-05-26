@@ -33,7 +33,7 @@ class CacheRecord {
     public random(): string {
         console.log(`popping random item from cache with ${this.records.length} items`);
         if (!this.hasRecords()) {
-            console.warn(`Cache is empty!`);
+            console.warn(`cache is empty!`);
             return null;
         }
         const index = Math.floor(Math.random() * this.records.length);
@@ -66,7 +66,7 @@ app.get("/random", (req, res) => {
         o$.next(cached.random());
         o$.complete();
     }).pipe(
-        concatMap(getResizedImageAsBuffer()),
+        concatMap(getResizedImageAsBuffer),
         timeout(RESPONSE_TIMEOUT),
         retryWhen(retryCondition),
         catchError(err => {
@@ -131,11 +131,11 @@ app.get("/random", (req, res) => {
 
 });
 
-function getResizedImageAsBuffer() {
-    return file => new Observable(o$ => {
+function getResizedImageAsBuffer(file: string) {
+    return new Observable(o$ => {
         o$.next(sharp(file)
             .resize(500, 700, {
-                fit: 'contain'
+                fit: 'inside'
             })
             .rotate()
             .toBuffer());
