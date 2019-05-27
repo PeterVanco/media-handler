@@ -7,12 +7,14 @@ import * as sharp from 'sharp'
 import {catchError, concatMap, finalize, map, retryWhen, switchMap, tap, timeout} from "rxjs/operators";
 import * as exif from 'exif'
 import * as cors from 'cors';
+import {ExifData} from "exif";
 
 require('console-stamp')(console);
 
 const PORT = process.env.PORT || 3000;
 const ROOT_FOLDER = process.env.ROOT_FOLDER || '\\\\DISKSERVER\\Photo';
 const TARGET_FOLDER = process.env.TARGET_FOLDER || ROOT_FOLDER + '\\2019 Cestovanie - Macao';
+// const TARGET_FOLDER = process.env.TARGET_FOLDER || ROOT_FOLDER + '';
 const RESIZE_WIDTH = parseInt(process.env.RESIZE_WIDTH) || 500;
 const ALLOWED_RETRIES = 5;
 const RESPONSE_TIMEOUT = 5000;
@@ -114,13 +116,7 @@ app.get("/random", (req, res) => {
             const imageTypeResult = imageType(result.buffer);
             console.log(`returning 200 as ${result.file} - ${imageTypeResult.mime}`);
             let headers: any = {'Content-Type': imageTypeResult.mime};
-            if ((result as any).exif) {
-                headers = {
-                    ...headers,
-                    'X-Image-Date': (result as any).exif.exif.CreateDate
-                }
-            }
-
+            headers = addImageDateHeader((result as any).exif, headers);
             headers = addImageNameHeader(result.file as string, headers);
             res.writeHead(200, headers);
             res.end(result.buffer);
@@ -172,26 +168,45 @@ function retryCondition(errors$) {
     );
 }
 
+function addImageDateHeader(exifData: ExifData, headers: any) {
+    if (!!exifData) {
+        const dateAndTime = exifData.exif.CreateDate.split(' ');
+        return {
+            ...headers,
+            'X-Image-Date': `${dateAndTime[0].replace(/:/g, '.')} ${dateAndTime[1]}`
+        }
+    }
+    return headers;
+}
+
 function addImageNameHeader(file: string, headers: any) {
     const safeRootFolder = ROOT_FOLDER.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     const regExp = new RegExp(safeRootFolder + "\\\\(.*)\\\\(.*)");
     const matches = regExp.exec(file);
     if (matches !== null && matches.length > 0) {
-        headers = {
+        return {
             ...headers,
-            'X-Image-Name': matches[1]
+            'X-Image-Name': encodeURI(matches[1])
         };
     }
     return headers;
 }
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`)
-});
 
+console.log(`scanning folder ${TARGET_FOLDER}. This may take a while ...`);
 recursive(TARGET_FOLDER,
-    [(file, stats) => !isImage(file)],
+    [(file, stats) => {
+        return !stats.isDirectory() && !isImage(file);
+    }],
     function (err, files) {
-        console.log(JSON.stringify(files, null, 4));
-        cache.set(CACHE_KEY, new CacheRecord(files), 120);
+        if (err !== null) {
+            console.error(err);
+            process.exit(1);
+        }
+
+        cache.set(CACHE_KEY, new CacheRecord(files), 3600 * 24);
+
+        app.listen(PORT, () => {
+            console.log(`Server is running on http://localhost:${PORT}`)
+        });
     });
