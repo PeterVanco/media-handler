@@ -146,7 +146,7 @@ async function refreshCache() {
     console.log(`scanning folder ${TARGET_FOLDER}. This may take a while ...`);
     const files = await recursive(TARGET_FOLDER,
         [(file, stats) => {
-            return !stats.isDirectory() && !isImage(file);
+            return !isImage(file) && !stats.isDirectory() && !file.includes('__thumb');
         }]);
     cache.set(CACHE_KEY, new CacheRecord(files), 3600 * 24);
     console.log('cache refreshed');
