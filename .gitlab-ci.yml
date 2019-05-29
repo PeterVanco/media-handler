@@ -1,0 +1,19 @@
+image: alpine:latest
+
+variables:
+
+  CI_APPLICATION_TAG: latest
+  DOCKER_DRIVER: overlay2
+
+stages:
+  - build
+  - test
+  - deploy # dummy stage to follow the template guidelines
+  - cleanup
+
+include:
+  - template: Jobs/Build.gitlab-ci.yml
+  - template: Jobs/Test.gitlab-ci.yml
+  - template: Jobs/Code-Quality.gitlab-ci.yml
+  - template: Security/Container-Scanning.gitlab-ci.yml
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
