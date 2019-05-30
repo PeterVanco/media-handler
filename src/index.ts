@@ -13,12 +13,15 @@ require('console-stamp')(console);
 const isImage = require('is-image');
 // const readChunk = require('read-chunk');
 const imageType = require('image-type');
+const requireEnv = require("require-environment-variables");
+
+requireEnv(['ROOT_FOLDER']);
 
 const PORT = process.env.PORT || 3000;
-const ROOT_FOLDER = process.env.ROOT_FOLDER || '\\\\DISKSERVER\\Photo';
-const TARGET_FOLDER = process.env.TARGET_FOLDER || ROOT_FOLDER + '\\2019 Cestovanie - Macao';
-// const TARGET_FOLDER = process.env.TARGET_FOLDER || ROOT_FOLDER + '';
+const ROOT_FOLDER = process.env.ROOT_FOLDER;
+const TARGET_FOLDER = (process.env.TARGET_FOLDER && ROOT_FOLDER + process.env.TARGET_FOLDER) || ROOT_FOLDER;
 const RESIZE_WIDTH = parseInt(process.env.RESIZE_WIDTH) || 500;
+const IGNORED = (process.env.IGNORED && process.env.IGNORED.split(',')) || ['__thumb'];
 
 const ALLOWED_RETRIES = 5;
 const RESPONSE_TIMEOUT = 5000;
@@ -146,7 +149,12 @@ async function refreshCache() {
     console.log(`scanning folder ${TARGET_FOLDER}. This may take a while ...`);
     const files = await recursive(TARGET_FOLDER,
         [(file, stats) => {
-            return !isImage(file) && !stats.isDirectory() && !file.includes('__thumb');
+            for (const ignoredSubstring of IGNORED) {
+                if (file.includes(ignoredSubstring)) {
+                    return true;
+                }
+            }
+            return !isImage(file) && !stats.isDirectory();
         }]);
     cache.set(CACHE_KEY, new CacheRecord(files), 3600 * 24);
     console.log('cache refreshed');
