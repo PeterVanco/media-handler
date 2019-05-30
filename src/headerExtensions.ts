@@ -1,9 +1,10 @@
 import {ExifData} from "exif";
+import * as path from "path";
 
 export const extensionHeaders = ['X-Image-Date', 'X-Image-Name'];
 
 export function addImageDateHeader(exifData: ExifData, headers: any) {
-    if (!!exifData) {
+    if (!!exifData && !!exifData.exif && !!exifData.exif.CreateDate) {
         const dateAndTime = exifData.exif.CreateDate.split(' ');
         return {
             ...headers,
@@ -14,13 +15,13 @@ export function addImageDateHeader(exifData: ExifData, headers: any) {
 }
 
 export function addImageNameHeader(rootFolder: string, file: string, headers: any) {
-    const safeRootFolder = rootFolder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const regExp = new RegExp(safeRootFolder + "\\\\(.*)\\\\(.*)");
-    const matches = regExp.exec(file);
-    if (matches !== null && matches.length > 0) {
+    const rootFolderParts = rootFolder.split(path.sep);
+    const fileParts = file.split(path.sep);
+
+    if (fileParts.length > rootFolderParts.length) {
         return {
             ...headers,
-            'X-Image-Name': encodeURI(matches[1])
+            'X-Image-Name': encodeURI(fileParts[rootFolderParts.length])
         };
     }
     return headers;
