@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 3000;
 const ROOT_FOLDER = process.env.ROOT_FOLDER;
 const TARGET_FOLDER = (process.env.TARGET_FOLDER && ROOT_FOLDER + process.env.TARGET_FOLDER) || ROOT_FOLDER;
 const RESIZE_WIDTH = parseInt(process.env.RESIZE_WIDTH) || 500;
-const IGNORED = (process.env.IGNORED && process.env.IGNORED.split(',')) || ['__thumb'];
+const IGNORED = (process.env.IGNORED && process.env.IGNORED.split(',')) || ['__thumb', '@Recycle'];
 
 const ALLOWED_RETRIES = 5;
 const RESPONSE_TIMEOUT = 5000;
